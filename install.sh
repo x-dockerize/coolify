@@ -54,6 +54,15 @@ set_env_once() {
 # --------------------------------------------------
 read -rp "COOLIFY_SERVER_HOSTNAME (örn: coolify.example.com): " COOLIFY_SERVER_HOSTNAME
 
+echo
+echo "--- Veritabanı ---"
+read -rp "DB_HOST (boş bırakılırsa: postgres): " INPUT_DB_HOST
+DB_HOST="${INPUT_DB_HOST:-postgres}"
+read -rp "DB_USERNAME (boş bırakılırsa: coolify): " INPUT_DB_USERNAME
+DB_USERNAME="${INPUT_DB_USERNAME:-coolify}"
+read -rsp "DB_PASSWORD: " DB_PASSWORD
+echo
+
 # --------------------------------------------------
 # Veri Dizinleri
 # --------------------------------------------------
@@ -61,26 +70,6 @@ for dir in ssh applications databases services backups webhooks-during-maintenan
   mkdir -p ".docker/coolify/data/$dir"
 done
 echo "✅ .docker/coolify/data/ dizinleri hazırlandı"
-
-# --------------------------------------------------
-# Veritabanı
-# --------------------------------------------------
-echo "🗄️  Coolify veritabanı oluşturuluyor..."
-
-DB_PASSWORD_VAL=$(grep "^DB_PASSWORD=" "$ENV_FILE" | cut -d'=' -f2-)
-
-if [ -z "$DB_PASSWORD_VAL" ]; then
-  DB_PASSWORD_VAL="$(gen_password)"
-  set_env DB_PASSWORD "$DB_PASSWORD_VAL"
-fi
-
-docker exec postgres psql -U dba -tc "SELECT 1 FROM pg_roles WHERE rolname='coolify'" | grep -q 1 || \
-  docker exec postgres psql -U dba -c "CREATE USER coolify WITH PASSWORD '${DB_PASSWORD_VAL}';"
-
-docker exec postgres psql -U dba -tc "SELECT 1 FROM pg_database WHERE datname='coolify'" | grep -q 1 || \
-  docker exec postgres psql -U dba -c "CREATE DATABASE coolify OWNER coolify;"
-
-echo "✅ Veritabanı hazır"
 
 # --------------------------------------------------
 # Docker Network
@@ -99,6 +88,9 @@ fi
 set_env COOLIFY_SERVER_HOSTNAME "$COOLIFY_SERVER_HOSTNAME"
 set_env APP_URL                 "https://${COOLIFY_SERVER_HOSTNAME}"
 set_env PUSHER_HOST             "${COOLIFY_SERVER_HOSTNAME}"
+set_env DB_HOST                 "$DB_HOST"
+set_env DB_USERNAME             "$DB_USERNAME"
+set_env DB_PASSWORD             "$DB_PASSWORD"
 
 # Secret'lar — mevcut değerlerin üzerine yazılmaz
 set_env_once APP_ID            "$(openssl rand -hex 16)"
