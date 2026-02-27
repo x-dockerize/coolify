@@ -72,17 +72,6 @@ done
 echo "✅ .docker/coolify/data/ dizinleri hazırlandı"
 
 # --------------------------------------------------
-# Docker Network
-# --------------------------------------------------
-NETWORK_NAME="coolify"
-if docker network inspect "$NETWORK_NAME" > /dev/null 2>&1; then
-  echo "ℹ️  Docker network '$NETWORK_NAME' zaten mevcut"
-else
-  docker network create "$NETWORK_NAME"
-  echo "✅ Docker network '$NETWORK_NAME' oluşturuldu"
-fi
-
-# --------------------------------------------------
 # .env Güncelle
 # --------------------------------------------------
 set_env COOLIFY_SERVER_HOSTNAME "$COOLIFY_SERVER_HOSTNAME"
