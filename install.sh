@@ -74,11 +74,11 @@ if [ -z "$DB_PASSWORD_VAL" ]; then
   set_env DB_PASSWORD "$DB_PASSWORD_VAL"
 fi
 
-docker exec postgres psql -U postgres -tc "SELECT 1 FROM pg_roles WHERE rolname='coolify'" | grep -q 1 || \
-  docker exec postgres psql -U postgres -c "CREATE USER coolify WITH PASSWORD '${DB_PASSWORD_VAL}';"
+docker exec postgres psql -U dba -tc "SELECT 1 FROM pg_roles WHERE rolname='coolify'" | grep -q 1 || \
+  docker exec postgres psql -U dba -c "CREATE USER coolify WITH PASSWORD '${DB_PASSWORD_VAL}';"
 
-docker exec postgres psql -U postgres -tc "SELECT 1 FROM pg_database WHERE datname='coolify'" | grep -q 1 || \
-  docker exec postgres psql -U postgres -c "CREATE DATABASE coolify OWNER coolify;"
+docker exec postgres psql -U dba -tc "SELECT 1 FROM pg_database WHERE datname='coolify'" | grep -q 1 || \
+  docker exec postgres psql -U dba -c "CREATE DATABASE coolify OWNER coolify;"
 
 echo "✅ Veritabanı hazır"
 
