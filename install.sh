@@ -58,9 +58,9 @@ read -rp "COOLIFY_SERVER_HOSTNAME (örn: coolify.example.com): " COOLIFY_SERVER_
 # Veri Dizinleri
 # --------------------------------------------------
 for dir in ssh applications databases services backups webhooks-during-maintenance; do
-  mkdir -p "/data/coolify/$dir"
+  mkdir -p ".docker/coolify/data/$dir"
 done
-echo "✅ /data/coolify/ dizinleri hazırlandı"
+echo "✅ .docker/coolify/data/ dizinleri hazırlandı"
 
 # --------------------------------------------------
 # Veritabanı

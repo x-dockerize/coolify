@@ -7,12 +7,12 @@ services:
     volumes:
       - ./.env:/var/www/html/.env
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /data/coolify/ssh:/var/www/html/storage/app/ssh
-      - /data/coolify/applications:/var/www/html/storage/app/applications
-      - /data/coolify/databases:/var/www/html/storage/app/databases
-      - /data/coolify/services:/var/www/html/storage/app/services
-      - /data/coolify/backups:/var/www/html/storage/app/backups
-      - /data/coolify/webhooks-during-maintenance:/var/www/html/storage/app/webhooks-during-maintenance
+      - ./.docker/coolify/data/ssh:/var/www/html/storage/app/ssh
+      - ./.docker/coolify/data/applications:/var/www/html/storage/app/applications
+      - ./.docker/coolify/data/databases:/var/www/html/storage/app/databases
+      - ./.docker/coolify/data/services:/var/www/html/storage/app/services
+      - ./.docker/coolify/data/backups:/var/www/html/storage/app/backups
+      - ./.docker/coolify/data/webhooks-during-maintenance:/var/www/html/storage/app/webhooks-during-maintenance
     networks:
       - traefik-network
       - coolify
