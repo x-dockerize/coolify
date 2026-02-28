@@ -28,7 +28,7 @@ services:
 
       - traefik.http.routers.coolify.rule=Host(`${COOLIFY_SERVER_HOSTNAME:?required}`)
       - traefik.http.routers.coolify.entrypoints=https
-      - traefik.http.routers.coolify.tls.certresolver=letsencrypt
+      - traefik.http.routers.coolify.tls.certresolver=cloudflare
       - traefik.http.routers.coolify.middlewares=trusted@file
       - traefik.http.routers.coolify.service=coolify
       - traefik.http.routers.coolify.priority=10
@@ -59,7 +59,7 @@ services:
       # WebSocket router — PathPrefix /app/ daha yüksek önceliğe sahip
       - traefik.http.routers.coolify-realtime.rule=Host(`${COOLIFY_SERVER_HOSTNAME:?required}`) && PathPrefix(`/app/`)
       - traefik.http.routers.coolify-realtime.entrypoints=https
-      - traefik.http.routers.coolify-realtime.tls.certresolver=letsencrypt
+      - traefik.http.routers.coolify-realtime.tls.certresolver=cloudflare
       - traefik.http.routers.coolify-realtime.service=coolify-realtime
       - traefik.http.routers.coolify-realtime.priority=20
 
