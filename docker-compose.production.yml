@@ -46,6 +46,10 @@ services:
     container_name: coolify-realtime
     restart: unless-stopped
     env_file: .env
+    environment:
+      SOKETI_DEFAULT_APP_ID: ${PUSHER_APP_ID}
+      SOKETI_DEFAULT_APP_KEY: ${PUSHER_APP_KEY}
+      SOKETI_DEFAULT_APP_SECRET: ${PUSHER_APP_SECRET}
     networks:
       - coolify
       - traefik-network
@@ -56,14 +60,23 @@ services:
       - traefik.enable=true
       - traefik.docker.network=traefik-network
 
-      # WebSocket router — PathPrefix /app/ daha yüksek önceliğe sahip
+      # Soketi WebSocket router — /app/ path
       - traefik.http.routers.coolify-realtime.rule=Host(`${COOLIFY_SERVER_HOSTNAME:?required}`) && PathPrefix(`/app/`)
       - traefik.http.routers.coolify-realtime.entrypoints=https
-      - traefik.http.routers.coolify-realtime.tls.certresolver=cloudflare
+      - traefik.http.routers.coolify-realtime.tls.certresolver=letsencrypt
       - traefik.http.routers.coolify-realtime.service=coolify-realtime
       - traefik.http.routers.coolify-realtime.priority=20
 
       - traefik.http.services.coolify-realtime.loadbalancer.server.port=6001
+
+      # Terminal WebSocket router — /terminal/ws path
+      - traefik.http.routers.coolify-terminal.rule=Host(`${COOLIFY_SERVER_HOSTNAME:?required}`) && PathPrefix(`/terminal/ws`)
+      - traefik.http.routers.coolify-terminal.entrypoints=https
+      - traefik.http.routers.coolify-terminal.tls.certresolver=letsencrypt
+      - traefik.http.routers.coolify-terminal.service=coolify-terminal
+      - traefik.http.routers.coolify-terminal.priority=30
+
+      - traefik.http.services.coolify-terminal.loadbalancer.server.port=6002
     healthcheck:
       test: ["CMD-SHELL", "pgrep -f node > /dev/null"]
       interval: 30s
