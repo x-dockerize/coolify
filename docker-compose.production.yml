@@ -50,6 +50,8 @@ services:
       SOKETI_DEFAULT_APP_ID: ${PUSHER_APP_ID}
       SOKETI_DEFAULT_APP_KEY: ${PUSHER_APP_KEY}
       SOKETI_DEFAULT_APP_SECRET: ${PUSHER_APP_SECRET}
+    volumes:
+      - ./.docker/coolify/data/ssh:/var/www/html/storage/app/ssh:ro
     networks:
       - coolify
       - traefik-network
