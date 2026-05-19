@@ -95,26 +95,33 @@ echo "✅ .docker/coolify/data/ dizinleri hazırlandı"
 # --------------------------------------------------
 cat > "setup-localhost-server.sh" << 'BASH'
 #!/usr/bin/env bash
-# Coolify localhost sunucu kaydını oluşturur.
-# Servisler çalışırken ve kurulum sihirbazı tamamlandıktan sonra bir kez çalıştır.
+# Kullanım:
+#   1. docker compose up -d sonrası çalıştır (SSH izinlerini düzeltir)
+#   2. Sihirbazda kullanıcı kaydı sonrası tekrar çalıştır (DB kayıtlarını oluşturur)
 set -e
 
+docker exec -u root coolify chown -R 9999:9999 /var/www/html/storage/app/ssh
+echo "✓ SSH izinleri düzeltildi"
+
 docker exec -it coolify php artisan tinker --execute="
-if (\DB::table('servers')->where('id', 0)->exists()) {
+if (!\DB::table('teams')->where('id', 0)->exists()) {
+  echo 'Önce sihirbazda kullanıcı kaydı yapın, sonra tekrar çalıştırın.' . PHP_EOL;
+} elseif (\DB::table('servers')->where('id', 0)->exists()) {
   echo 'Localhost sunucusu zaten mevcut.' . PHP_EOL;
 } else {
-  \$key = trim(file_get_contents('/var/www/html/storage/app/ssh/keys/localhost_key'));
-  \$keyId = \DB::table('private_keys')->insertGetId([
-    'uuid'        => (string)\Str::uuid(),
-    'name'        => 'devops-localhost',
-    'private_key' => \Crypt::encryptString(\$key),
-    'team_id'     => 0,
-    'created_at'  => now(),
-    'updated_at'  => now(),
-  ]);
+  \$keyContent = trim((string)file_get_contents('/var/www/html/storage/app/ssh/keys/localhost_key'));
+  if (empty(\$keyContent)) { echo 'HATA: localhost_key okunamadi.' . PHP_EOL; return; }
+  \$pk = new \App\Models\PrivateKey();
+  \$pk->uuid = (string)\Str::uuid();
+  \$pk->name = 'devops-localhost';
+  \$pk->private_key = \$keyContent;
+  \$pk->team_id = 0;
+  \$pk->save();
+  \$keyId = \$pk->id;
   \$sql = 'INSERT INTO servers (id, uuid, name, ip, port, \"user\", team_id, private_key_id, proxy, created_at, updated_at) VALUES (0, gen_random_uuid(), \'devops\', \'host.docker.internal\', 22, \'__SSH_USER__\', 0, ' . \$keyId . ', \'{\"type\":\"NONE\",\"status\":\"stopped\",\"force_stop\":true,\"force_disabled\":false}\', NOW(), NOW())';
   \DB::statement(\$sql);
-  echo 'Localhost sunucusu (id=0) oluşturuldu.' . PHP_EOL;
+  \DB::table('server_settings')->insert(['server_id' => 0, 'created_at' => now(), 'updated_at' => now()]);
+  echo 'Localhost sunucusu (id=0) olusturuldu.' . PHP_EOL;
 }
 "
 BASH
@@ -154,17 +161,18 @@ echo ""
 echo "  1. Servisleri başlat:"
 echo "     docker compose -f docker-compose.production.yml up -d"
 echo ""
-echo "  2. İlk kurulum sihirbazını tamamla:"
+echo "  2. SSH izinlerini düzelt ve localhost sunucu kaydını oluştur:"
+echo "     ./setup-localhost-server.sh"
+echo "     (sihirbazdan ÖNCE çalıştır)"
+echo ""
+echo "  3. İlk kurulum sihirbazını tamamla:"
 echo "     https://$COOLIFY_SERVER_HOSTNAME/install"
 echo ""
-echo "  3. Coolify'in kendi proxy'sini devre dışı bırak:"
+echo "  4. Coolify'in kendi proxy'sini devre dışı bırak:"
 echo "     docker exec -it coolify php artisan tinker --execute=\""
 echo "     \App\Models\Server::all()->each(function(\$s) {"
 echo "       \$p = \$s->proxy; \$p['type'] = 'NONE'; \$p['status'] = 'stopped'; \$p['force_stop'] = true;"
 echo "       \$s->proxy = \$p; \$s->save(); echo \$s->name . PHP_EOL;"
 echo "     });\""
 echo "     (Mevcut Traefik korunur, çakışma olmaz)"
-echo ""
-echo "  4. Localhost sunucu kaydını oluştur (/settings sayfası için zorunlu):"
-echo "     ./setup-localhost-server.sh"
 echo "==============================================="
