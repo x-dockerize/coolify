@@ -112,7 +112,7 @@ if (\DB::table('servers')->where('id', 0)->exists()) {
     'created_at'  => now(),
     'updated_at'  => now(),
   ]);
-  \$sql = 'INSERT INTO servers (id, uuid, name, ip, port, \"user\", team_id, private_key_id, proxy, created_at, updated_at) VALUES (0, gen_random_uuid(), \'devops\', \'host.docker.internal\', 22, \'__SSH_USER__\', 0, ' . \$keyId . ', \'{"type":"NONE","status":"stopped","force_stop":true,"force_disabled":false}\', NOW(), NOW())';
+  \$sql = 'INSERT INTO servers (id, uuid, name, ip, port, \"user\", team_id, private_key_id, proxy, created_at, updated_at) VALUES (0, gen_random_uuid(), \'devops\', \'host.docker.internal\', 22, \'__SSH_USER__\', 0, ' . \$keyId . ', \'{\"type\":\"NONE\",\"status\":\"stopped\",\"force_stop\":true,\"force_disabled\":false}\', NOW(), NOW())';
   \DB::statement(\$sql);
   echo 'Localhost sunucusu (id=0) oluşturuldu.' . PHP_EOL;
 }
