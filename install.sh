@@ -82,12 +82,9 @@ fi
 
 mkdir -p ~/.ssh && chmod 700 ~/.ssh
 touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys
-if ! grep -qF "coolify-localhost" ~/.ssh/authorized_keys; then
-  cat "${LOCALHOST_KEY}.pub" >> ~/.ssh/authorized_keys
-  echo "✅ Public key ~/.ssh/authorized_keys'e eklendi"
-else
-  echo "ℹ️  Public key zaten authorized_keys'te mevcut"
-fi
+grep -v "coolify-localhost" ~/.ssh/authorized_keys > /tmp/ak_tmp 2>/dev/null && mv /tmp/ak_tmp ~/.ssh/authorized_keys || true
+cat "${LOCALHOST_KEY}.pub" >> ~/.ssh/authorized_keys
+echo "✅ Public key ~/.ssh/authorized_keys'e eklendi/güncellendi"
 
 chmod -R 700 ".docker/coolify/data/ssh"
 chown -R 9999:9999 ".docker/coolify/data/ssh" 2>/dev/null || true
@@ -110,12 +107,12 @@ if (\DB::table('servers')->where('id', 0)->exists()) {
   \$keyId = \DB::table('private_keys')->insertGetId([
     'uuid'        => (string)\Str::uuid(),
     'name'        => 'devops-localhost',
-    'private_key' => \$key,
+    'private_key' => \Crypt::encryptString(\$key),
     'team_id'     => 0,
     'created_at'  => now(),
     'updated_at'  => now(),
   ]);
-  \$sql = 'INSERT INTO servers (id, uuid, name, ip, port, \"user\", team_id, private_key_id, created_at, updated_at) VALUES (0, gen_random_uuid(), \'devops\', \'host.docker.internal\', 22, \'__SSH_USER__\', 0, ' . \$keyId . ', NOW(), NOW())';
+  \$sql = 'INSERT INTO servers (id, uuid, name, ip, port, \"user\", team_id, private_key_id, proxy, created_at, updated_at) VALUES (0, gen_random_uuid(), \'devops\', \'host.docker.internal\', 22, \'__SSH_USER__\', 0, ' . \$keyId . ', \'{"type":"NONE","status":"stopped","force_stop":true,"force_disabled":false}\', NOW(), NOW())';
   \DB::statement(\$sql);
   echo 'Localhost sunucusu (id=0) oluşturuldu.' . PHP_EOL;
 }
