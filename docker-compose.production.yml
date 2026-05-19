@@ -16,7 +16,7 @@ services:
     extra_hosts:
       - host.docker.internal:host-gateway
     networks:
-      - coolify
+      - internal
       - postgres-network
       - traefik-network
     depends_on:
@@ -53,7 +53,7 @@ services:
     volumes:
       - ./.docker/coolify/data/ssh:/var/www/html/storage/app/ssh:ro
     networks:
-      - coolify
+      - internal
       - traefik-network
     depends_on:
       coolify:
@@ -94,7 +94,7 @@ services:
     volumes:
       - coolify-redis-data:/data
     networks:
-      - coolify
+      - internal
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
@@ -108,8 +108,7 @@ volumes:
 
 
 networks:
-  coolify:
-    name: coolify
+  internal:
   postgres-network:
     external: true
   traefik-network:
