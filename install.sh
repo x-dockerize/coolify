@@ -66,12 +66,64 @@ echo
 # --------------------------------------------------
 # Veri Dizinleri
 # --------------------------------------------------
+SSH_USER="$(whoami)"
+LOCALHOST_KEY=".docker/coolify/data/ssh/keys/localhost_key"
+
 for dir in ssh ssh/keys applications databases services backups webhooks-during-maintenance; do
   mkdir -p ".docker/coolify/data/$dir"
 done
+
+if [ ! -f "$LOCALHOST_KEY" ]; then
+  ssh-keygen -t ed25519 -f "$LOCALHOST_KEY" -N "" -C "coolify-localhost" -q
+  echo "✅ Localhost SSH anahtarı oluşturuldu"
+else
+  echo "ℹ️  Localhost SSH anahtarı mevcut, atlanıyor"
+fi
+
+mkdir -p ~/.ssh && chmod 700 ~/.ssh
+touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys
+if ! grep -qF "coolify-localhost" ~/.ssh/authorized_keys; then
+  cat "${LOCALHOST_KEY}.pub" >> ~/.ssh/authorized_keys
+  echo "✅ Public key ~/.ssh/authorized_keys'e eklendi"
+else
+  echo "ℹ️  Public key zaten authorized_keys'te mevcut"
+fi
+
 chmod -R 700 ".docker/coolify/data/ssh"
 chown -R 9999:9999 ".docker/coolify/data/ssh" 2>/dev/null || true
 echo "✅ .docker/coolify/data/ dizinleri hazırlandı"
+
+# --------------------------------------------------
+# Localhost Sunucu Kurulum Scripti
+# --------------------------------------------------
+cat > "setup-localhost-server.sh" << 'BASH'
+#!/usr/bin/env bash
+# Coolify localhost sunucu kaydını oluşturur.
+# Servisler çalışırken ve kurulum sihirbazı tamamlandıktan sonra bir kez çalıştır.
+set -e
+
+docker exec -it coolify php artisan tinker --execute="
+if (\DB::table('servers')->where('id', 0)->exists()) {
+  echo 'Localhost sunucusu zaten mevcut.' . PHP_EOL;
+} else {
+  \$key = trim(file_get_contents('/var/www/html/storage/app/ssh/keys/localhost_key'));
+  \$keyId = \DB::table('private_keys')->insertGetId([
+    'uuid'        => (string)\Str::uuid(),
+    'name'        => 'devops-localhost',
+    'private_key' => \$key,
+    'team_id'     => 0,
+    'created_at'  => now(),
+    'updated_at'  => now(),
+  ]);
+  \$sql = 'INSERT INTO servers (id, uuid, name, ip, port, \"user\", team_id, private_key_id, created_at, updated_at) VALUES (0, gen_random_uuid(), \'devops\', \'host.docker.internal\', 22, \'__SSH_USER__\', 0, ' . \$keyId . ', NOW(), NOW())';
+  \DB::statement(\$sql);
+  echo 'Localhost sunucusu (id=0) oluşturuldu.' . PHP_EOL;
+}
+"
+BASH
+sed -i "s|__SSH_USER__|$SSH_USER|g" setup-localhost-server.sh
+chmod +x setup-localhost-server.sh
+echo "✅ setup-localhost-server.sh oluşturuldu"
 
 # --------------------------------------------------
 # .env Güncelle
@@ -115,4 +167,7 @@ echo "       \$p = \$s->proxy; \$p['type'] = 'NONE'; \$p['status'] = 'stopped'; 
 echo "       \$s->proxy = \$p; \$s->save(); echo \$s->name . PHP_EOL;"
 echo "     });\""
 echo "     (Mevcut Traefik korunur, çakışma olmaz)"
+echo ""
+echo "  4. Localhost sunucu kaydını oluştur (/settings sayfası için zorunlu):"
+echo "     ./setup-localhost-server.sh"
 echo "==============================================="
