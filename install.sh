@@ -66,9 +66,11 @@ echo
 # --------------------------------------------------
 # Veri Dizinleri
 # --------------------------------------------------
-for dir in ssh applications databases services backups webhooks-during-maintenance; do
+for dir in ssh ssh/keys applications databases services backups webhooks-during-maintenance; do
   mkdir -p ".docker/coolify/data/$dir"
 done
+chmod -R 700 ".docker/coolify/data/ssh"
+chown -R 9999:9999 ".docker/coolify/data/ssh" 2>/dev/null || true
 echo "✅ .docker/coolify/data/ dizinleri hazırlandı"
 
 # --------------------------------------------------
